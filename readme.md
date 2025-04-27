@@ -1,12 +1,16 @@
 # API Endpoints
 
 ## POST /assistances  
+
 Create a new assistance.  
 **Request body**  
+
 ```json
 { "name": "string" }
 ```  
+
 **Response (201 Created)**  
+
 ```json
 {
   "id": "uuid",
@@ -17,8 +21,10 @@ Create a new assistance.
 ```
 
 ## GET /assistances  
+
 List all assistances.  
 **Response (200 OK)**  
+
 ```json
 [
   {
@@ -32,8 +38,10 @@ List all assistances.
 ```
 
 ## POST /assistances/:assistanceId/files  
+
 Upload a file to an assistance.  
 **Response (201 Created)**  
+
 ```json
 {
   "id": "file-id",
@@ -46,8 +54,10 @@ Upload a file to an assistance.
 ```
 
 ## DELETE /assistances/:assistanceId/files/:fileId  
+
 Remove a file from an assistance.  
 **Response (200 OK)**  
+
 ```json
 {
   "id": "file-id",
@@ -56,8 +66,10 @@ Remove a file from an assistance.
 ```
 
 ## POST /assistances/:assistanceId/threads  
+
 Create a new thread under an assistance.  
 **Response (201 Created)**  
+
 ```json
 {
   "id": "thread-id",
@@ -66,8 +78,10 @@ Create a new thread under an assistance.
 ```
 
 ## GET /assistances/:assistanceId/threads  
+
 List all threads for an assistance.  
 **Response (200 OK)**  
+
 ```json
 [
   {
@@ -79,15 +93,19 @@ List all threads for an assistance.
 ```
 
 ## POST /assistances/:assistanceId/threads/:threadId/messages  
+
 Add a message to a thread.  
 **Request body**  
+
 ```json
 { 
   "role": "user" | "assistant",
   "content": "string"
 }
 ```  
+
 **Response (201 Created)**  
+
 ```json
 {
   "role": "user" | "assistant",
@@ -96,8 +114,10 @@ Add a message to a thread.
 ```
 
 ## POST /assistances/:assistanceId/threads/:threadId/run  
+
 Send all messages in a thread to OpenAI and receive an assistant reply.  
 **Response (200 OK)**  
+
 ```json
 {
   "role": "assistant",
