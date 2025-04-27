@@ -1,0 +1,31 @@
+# dependencies
+node_modules/
+
+# dotenv environment variables
+.env
+
+# build output
+dist/
+coverage/
+
+# uploaded files
+uploads/
+
+# logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE/editor folders
+.vscode/
+.idea/
+
+# lock files (if you prefer not to commit)
+package-lock.json
+yarn.lock
