@@ -1,19 +1,26 @@
-const { v4: uuidv4 } = require("uuid");
-const store = require("../store");
+const assistanceModel = require("../models/assistanceModel");
 
-exports.createAssistance = (req, res) => {
-  const { name } = req.body;
-  const id = uuidv4();
-  const newAssistance = {
-    id,
-    name: name || `Assistance ${id}`,
-    files: [],
-    threads: {}
-  };
-  store.assistances.push(newAssistance);
-  res.status(201).json(newAssistance);
+/**
+ * Create a new assistance.
+ */
+exports.createAssistance = async (req, res) => {
+  try {
+    const { name } = req.body;
+    const assistance = await assistanceModel.createAssistance(name);
+    res.status(201).json(assistance);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
 
-exports.listAssistances = (req, res) => {
-  res.json(store.assistances);
+/**
+ * List all assistances.
+ */
+exports.listAssistances = async (req, res) => {
+  try {
+    const assistances = await assistanceModel.listAssistances();
+    res.json(assistances);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
