@@ -1,15 +1,105 @@
-POST /assistances → create a new “assistance”
+# API Endpoints
 
-GET /assistances → list all assistances
+## POST /assistances  
+Create a new assistance.  
+**Request body**  
+```json
+{ "name": "string" }
+```  
+**Response (201 Created)**  
+```json
+{
+  "id": "uuid",
+  "name": "string",
+  "files": [],
+  "threads": {}
+}
+```
 
-POST /assistances/:assistanceId/files → upload a file to that assistance
+## GET /assistances  
+List all assistances.  
+**Response (200 OK)**  
+```json
+[
+  {
+    "id": "uuid",
+    "name": "string",
+    "files": [],
+    "threads": {}
+  },
+  ...
+]
+```
 
-DELETE /assistances/:assistanceId/files/:fileId → remove a file
+## POST /assistances/:assistanceId/files  
+Upload a file to an assistance.  
+**Response (201 Created)**  
+```json
+{
+  "id": "file-id",
+  "object": "file",
+  "bytes": 12345,
+  "created_at": 1616161616,
+  "filename": "example.txt",
+  // ...other OpenAI file metadata
+}
+```
 
-POST /assistances/:assistanceId/threads → create a new thread in that assistance
+## DELETE /assistances/:assistanceId/files/:fileId  
+Remove a file from an assistance.  
+**Response (200 OK)**  
+```json
+{
+  "id": "file-id",
+  "deleted": true
+}
+```
 
-GET /assistances/:assistanceId/threads → list threads
+## POST /assistances/:assistanceId/threads  
+Create a new thread under an assistance.  
+**Response (201 Created)**  
+```json
+{
+  "id": "thread-id",
+  "messages": []
+}
+```
 
-POST /assistances/:assistanceId/threads/:threadId/messages → add a message (role+content)
+## GET /assistances/:assistanceId/threads  
+List all threads for an assistance.  
+**Response (200 OK)**  
+```json
+[
+  {
+    "id": "thread-id",
+    "messages": []
+  },
+  ...
+]
+```
 
-POST /assistances/:assistanceId/threads/:threadId/run → send all messages to OpenAI and 
+## POST /assistances/:assistanceId/threads/:threadId/messages  
+Add a message to a thread.  
+**Request body**  
+```json
+{ 
+  "role": "user" | "assistant",
+  "content": "string"
+}
+```  
+**Response (201 Created)**  
+```json
+{
+  "role": "user" | "assistant",
+  "content": "string"
+}
+```
+
+## POST /assistances/:assistanceId/threads/:threadId/run  
+Send all messages in a thread to OpenAI and receive an assistant reply.  
+**Response (200 OK)**  
+```json
+{
+  "role": "assistant",
+  "content": "string"
+}
