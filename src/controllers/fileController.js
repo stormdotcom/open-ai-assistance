@@ -32,7 +32,7 @@ async function listVectorStoreFiles(vsId) {
   const files = [];
   let cursor;
   do {
-    const resp = await openai.beta.vectorStores.files.list(vsId, { after: cursor });
+    const resp = await openai.vectorStores.files.list(vsId, { after: cursor });
     files.push(...resp.data);
     cursor = resp.has_more ? resp.last_id : undefined;
   } while (cursor);
@@ -154,7 +154,7 @@ async function uploadFile (req, res) {
     // If none yet, create a new one; otherwise reuse the first
     const vsId =
       existingVS[0] ??
-      (await openai.beta.vectorStores.create({ name: `kb-${assistantId}` })).id;  
+      (await openai.vectorStores.create({ name: `kb-${assistantId}` })).id;  
     // Vector stores let the File Search tool perform semantic lookups. :contentReference[oaicite:2]{index=2}
 
     // 3. Ingest the file into the Vector Store and wait for completion
@@ -213,7 +213,7 @@ async function deleteFile(req, res) {
     /* 2. Remove from any vector-store */
     for (const vsId of vsIds) {
       try {
-        await openai.beta.vectorStores.files.remove(vsId, fileId);
+        await openai.vectorStores.files.remove(vsId, fileId);
       } catch {/* ignore if not present */}
     }
 

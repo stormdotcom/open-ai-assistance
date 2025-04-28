@@ -1,80 +1,75 @@
 // Controller for OpenAI Assistants API
-const { SYSTEM_INSTRUCTIONS } = require("../constant");
-const { openai } = require("../services/openaiService");
+const openai = require("../services/openaiService");
 
 /**
- * Create a new assistant using OpenAI Assistants API.
+ * Create a new assistant using OpenAI.
  */
 exports.createAssistance = async (req, res) => {
   try {
-    const { name, instructions =""} = req.body;
-    const response = await openai.beta.assistants.create({
-      name,
-      model: "gpto",
-      instructions: instructions+ SYSTEM_INSTRUCTIONS,
-      tools: [{ type: "file_search" }]
-    });
+    const { name, instructions } = req.body;
+    const response = await openai.createAssistant(name, instructions);
     res.status(201).json(response);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: err.message });
   }
 };
 
-/**
- * List all assistants.
+/** 
+ * List all assistants from OpenAI.
  */
 exports.listAssistances = async (req, res) => {
   try {
-    const response = await openai.beta.assistants.list();
+    const response = await openai.listAssistants();
     res.json(response.data);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: err.message });
   }
 };
 
 /**
- * Retrieve an assistant by ID.
+ * Get an assistant by ID from OpenAI.
  */
-exports.getAssistance = async (req, res) => {
+exports.getAssistanceById = async (req, res) => {
   try {
     const { assistantId } = req.params;
-    console.log("assistantId", assistantId);
-    const response = await openai.beta.assistants.retrieve(assistantId);
+    const response = await openai.getAssistant(assistantId);
     res.json(response);
   } catch (err) {
-    console.log(err);
+    console.error(err);
     res.status(500).json({ error: err.message });
   }
 };
 
 /**
- * Update an assistant.
+ * Update an assistant using OpenAI.
  */
 exports.updateAssistance = async (req, res) => {
   try {
     const { assistantId } = req.params;
-    const { name, instructions, add_files, remove_files } = req.body;
-    const response = await openai.beta.assistants.update(assistantId, {
+    const { name, instructions } = req.body;
+    const response = await openai.updateAssistant(assistantId, {
       name,
       instructions,
-      add_files,
-      remove_files
     });
     res.json(response);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: err.message });
   }
 };
 
 /**
- * Delete an assistant.
+ * Delete an assistant using OpenAI.
  */
 exports.deleteAssistance = async (req, res) => {
   try {
     const { assistantId } = req.params;
-    await openai.beta.assistants.del(assistantId);
+    await openai.deleteAssistant(assistantId);
     res.status(204).send();
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: err.message });
   }
 };

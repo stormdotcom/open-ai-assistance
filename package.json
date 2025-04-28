@@ -12,15 +12,14 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "axios": "^1.9.0",
     "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.2",
     "openai": "^4.96.0",
-    "pg": "^8.15.6",
-    "pg-hstore": "^2.3.4",
-    "sequelize": "^6.37.7",
     "uuid": "^11.1.0"
   },
   "devDependencies": {
