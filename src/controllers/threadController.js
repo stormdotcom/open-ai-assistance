@@ -55,17 +55,18 @@ exports.listThreads = async (req, res) => {
 exports.addMessage = async (req, res) => {
   try {
     const { assistantId, threadId } = req.params;
-    const { role, content } = req.body;
+    const { role, content, file_ids } = req.body;
     
     // Add message using OpenAI API
-    const openaiMessage = await openai.addMessage(assistantId, threadId, role, content);
+    const openaiMessage = await openai.addMessage(assistantId, threadId, role, content, file_ids);
     
     // Save message in file system
     const localMessage = await fileStorage.addMessage(threadId, role, content);
     
     res.status(201).json({
       ...localMessage,
-      openai_message_id: openaiMessage.id
+      openai_message_id: openaiMessage.id,
+      file_ids: openaiMessage.file_ids
     });
   } catch (err) {
     console.error('Error adding message:', err);
@@ -82,23 +83,35 @@ exports.addMessage = async (req, res) => {
 exports.listMessages = async (req, res) => {
   try {
     const { assistantId, threadId } = req.params;
+    const { limit, order, after, before } = req.query;
+    
+    // Get messages from OpenAI with context
+    const messages = await openai.listMessages(assistantId, threadId, {
+      limit: parseInt(limit) || 100,
+      order: order || 'desc',
+      after,
+      before
+    });
     
     // Get messages from file system
     const localMessages = await fileStorage.listMessages(threadId);
     
-    // Get messages from OpenAI
-    const openaiMessages = await openai.listMessages(assistantId, threadId);
-    
     // Combine local and OpenAI messages
-    const messages = localMessages.map(local => {
-      const openai = openaiMessages.data.find(m => m.content === local.content);
+    const combinedMessages = messages.data.map(openaiMsg => {
+      const localMsg = localMessages.find(m => m.content === openaiMsg.content);
       return {
-        ...local,
-        openai_message_id: openai?.id
+        ...openaiMsg,
+        local_id: localMsg?.id,
+        file_ids: openaiMsg.file_ids || []
       };
     });
     
-    res.json(messages);
+    res.json({
+      data: combinedMessages,
+      has_more: messages.has_more,
+      first_id: messages.first_id,
+      last_id: messages.last_id
+    });
   } catch (err) {
     console.error('Error listing messages:', err);
     res.status(500).json({ 
@@ -282,11 +295,62 @@ exports.runThreadSync = async (req, res) => {
 };
 
 /**
+ * Get a specific message from a thread.
+ */
+exports.getMessage = async (req, res) => {
+  try {
+    const { assistantId, threadId, messageId } = req.params;
+    
+    // Get message from OpenAI
+    const message = await openai.getMessage(assistantId, threadId, messageId);
+    
+    // Get local message
+    const localMessage = await fileStorage.getMessage(messageId);
+    
+    res.json({
+      ...message,
+      local_id: localMessage?.id,
+      file_ids: message.file_ids || []
+    });
+  } catch (err) {
+    console.error('Error getting message:', err);
+    res.status(500).json({ 
+      error: err.message,
+      details: err.stack
+    });
+  }
+};
+
+/**
+ * Modify a message in a thread.
+ */
+exports.modifyMessage = async (req, res) => {
+  try {
+    const { assistantId, threadId, messageId } = req.params;
+    const updates = req.body;
+    
+    // Modify message in OpenAI
+    const message = await openai.modifyMessage(assistantId, threadId, messageId, updates);
+    
+    res.json(message);
+  } catch (err) {
+    console.error('Error modifying message:', err);
+    res.status(500).json({ 
+      error: err.message,
+      details: err.stack
+    });
+  }
+};
+
+/**
  * Delete a message from a thread.
  */
 exports.deleteMessage = async (req, res) => {
   try {
-    const { threadId, messageId } = req.params;
+    const { assistantId, threadId, messageId } = req.params;
+    
+    // Delete message from OpenAI
+    await openai.deleteMessage(assistantId, threadId, messageId);
     
     // Delete message from file system
     const result = await fileStorage.deleteMessage(messageId);
@@ -301,6 +365,159 @@ exports.deleteMessage = async (req, res) => {
     res.status(500).json({ 
       error: err.message,
       details: err.stack
+    });
+  }
+};
+
+/**
+ * Create a thread and run it in one call.
+ */
+exports.createThreadAndRun = async (req, res) => {
+  try {
+    const { assistantId } = req.params;
+    const { instructions, model, tools, metadata } = req.body;
+
+    // Create thread and run in one call
+    const result = await openai.createThreadAndRun(assistantId, {
+      instructions,
+      model,
+      tools,
+      metadata
+    });
+
+    // Save thread in file system
+    const localThread = await fileStorage.createThread(assistantId, result.thread_id);
+
+    res.status(201).json({
+      ...result,
+      local_thread_id: localThread.id
+    });
+  } catch (err) {
+    console.error('Error creating thread and run:', err);
+    res.status(500).json({ 
+      error: err.message,
+      details: err.stack
+    });
+  }
+};
+
+/**
+ * List runs for a thread.
+ */
+exports.listRuns = async (req, res) => {
+  try {
+    const { assistantId, threadId } = req.params;
+    
+    // Get runs from OpenAI
+    const runs = await openai.listRuns(assistantId, threadId);
+    
+    res.json(runs.data);
+  } catch (err) {
+    console.error('Error listing runs:', err);
+    res.status(500).json({ 
+      error: err.message,
+      details: err.stack
+    });
+  }
+};
+
+/**
+ * Ask AI about uploaded files
+ * This endpoint allows users to query information about uploaded files
+ * Supports both GET and POST requests
+ */
+exports.askAI = async (req, res) => {
+  let thread = null;
+  try {
+    const { assistantId } = req.params;
+    const query = req.method === 'GET' ? req.query.query : req.body.query;
+
+    if (!query) {
+      res.status(400).json({ 
+        error: 'Query is required',
+        details: 'Please provide a query parameter in the request'
+      });
+      return;
+    }
+
+    if (!assistantId) {
+      res.status(400).json({
+        error: 'Assistant ID is required',
+        details: 'Please provide a valid assistant ID in the URL'
+      });
+      return;
+    }
+
+    // Create a new thread
+    thread = await openai.createThread();
+    
+    // Add the user's query as a message
+    await openai.addMessage(assistantId, thread.id, 'user', query);
+    
+    // Create and run the assistant
+    const run = await openai.createRun(assistantId, thread.id, {
+      instructions: "Please answer the user's question based on the uploaded files. If the information is not available in the files, say so clearly."
+    });
+
+    // Poll for completion with timeout
+    let runStatus = await openai.getRun(assistantId, thread.id, run.id);
+    let attempts = 0;
+    const maxAttempts = 30; // 30 seconds timeout
+
+    while ((runStatus.status === 'queued' || runStatus.status === 'in_progress') && attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      runStatus = await openai.getRun(assistantId, thread.id, run.id);
+      attempts++;
+    }
+
+    if (attempts >= maxAttempts) {
+      res.status(408).json({ error: 'Request timed out after 30 seconds' });
+      return;
+    }
+
+    if (runStatus.status === 'failed') {
+      res.status(500).json({ error: runStatus.last_error?.message || 'Run failed' });
+      return;
+    }
+
+    // Get the assistant's response
+    const messages = await openai.listMessages(assistantId, thread.id);
+    const assistantMessage = messages.data.find(m => m.role === 'assistant');
+
+    if (!assistantMessage) {
+      res.status(500).json({ error: 'No response from assistant' });
+      return;
+    }
+
+    // Ensure we have a valid response before sending
+    if (!assistantMessage.content) {
+      res.status(500).json({ error: 'Invalid response from assistant' });
+      return;
+    }
+
+    // Send response
+    res.status(200).json({
+      response: assistantMessage.content,
+      thread_id: thread.id
+    });
+
+  } catch (err) {
+    console.error('Error in askAI:', err);
+    
+    // Clean up thread if it was created
+    if (thread) {
+      try {
+        await openai.deleteThread(thread.id);
+      } catch (cleanupErr) {
+        console.error('Error cleaning up thread:', cleanupErr);
+      }
+    }
+
+    // Send error response
+    res.status(err.status || 500).json({ 
+      error: err.message,
+      details: err.stack,
+      code: err.code
     });
   }
 };

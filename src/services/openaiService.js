@@ -6,7 +6,7 @@ const openaiClient = axios.create({
   headers: {
     "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
     "Content-Type": "application/json",
-    "OpenAI-Beta":    "assistants=v2", 
+    "OpenAI-Beta": "assistants=v2",
     // if you use organizations:
     ...(process.env.OPENAI_ORGANIZATION && {
       "OpenAI-Organization": process.env.OPENAI_ORGANIZATION
@@ -88,7 +88,7 @@ exports.deleteAssistant = async (assistantId) => {
 // Thread operations
 exports.createThread = async (assistantId) => {
   const { data } = await openaiClient.post(
-    `/assistants/${assistantId}/threads`,
+    `/v1/threads`,
     {}
   );
   return data;
@@ -96,53 +96,163 @@ exports.createThread = async (assistantId) => {
 
 exports.listThreads = async (assistantId) => {
   const { data } = await openaiClient.get(
-    `/assistants/${assistantId}/threads`
+    `/v1/threads`
   );
   return data;
 };
 
 // Message operations
-exports.addMessage = async (assistantId, threadId, role, content) => {
+exports.addMessage = async (assistantId, threadId, role, content, fileIds = []) => {
   const { data } = await openaiClient.post(
-    `/assistants/${assistantId}/threads/${threadId}/messages`,
-    { role, content }
+    `/v1/threads/${threadId}/messages`,
+    { 
+      role, 
+      content,
+      file_ids: fileIds
+    }
   );
   return data;
 };
 
-exports.listMessages = async (assistantId, threadId) => {
+exports.listMessages = async (assistantId, threadId, options = {}) => {
   const { data } = await openaiClient.get(
-    `/assistants/${assistantId}/threads/${threadId}/messages`
+    `/v1/threads/${threadId}/messages`,
+    { 
+      params: {
+        limit: options.limit || 100,
+        order: options.order || 'desc',
+        after: options.after,
+        before: options.before
+      }
+    }
   );
+  return data;
+};
+
+exports.getMessage = async (assistantId, threadId, messageId) => {
+  const { data } = await openaiClient.get(
+    `/v1/threads/${threadId}/messages/${messageId}`
+  );
+  return data;
+};
+
+exports.modifyMessage = async (assistantId, threadId, messageId, updates) => {
+  const { data } = await openaiClient.post(
+    `/v1/threads/${threadId}/messages/${messageId}`,
+    updates
+  );
+  return data;
+};
+
+exports.deleteMessage = async (assistantId, threadId, messageId) => {
+  const { data } = await openaiClient.delete(
+    `/v1/threads/${threadId}/messages/${messageId}`
+  );
+  return data;
+};
+
+// File operations
+exports.uploadFile = async (file, purpose = 'assistants') => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('purpose', purpose);
+
+  const { data } = await openaiClient.post(
+    '/files',
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    }
+  );
+  return data;
+};
+
+exports.listFiles = async (purpose = 'assistants') => {
+  const { data } = await openaiClient.get(
+    '/files',
+    {
+      params: { purpose }
+    }
+  );
+  return data;
+};
+
+exports.getFile = async (fileId) => {
+  const { data } = await openaiClient.get(`/files/${fileId}`);
+  return data;
+};
+
+exports.deleteFile = async (fileId) => {
+  const { data } = await openaiClient.delete(`/files/${fileId}`);
   return data;
 };
 
 // Run operations
 exports.listRuns = async (assistantId, threadId) => {
   const { data } = await openaiClient.get(
-    `/assistants/${assistantId}/threads/${threadId}/runs`
+    `/v1/threads/${threadId}/runs`
   );
   return data;
 };
 
 exports.cancelRun = async (assistantId, threadId, runId) => {
   const { data } = await openaiClient.post(
-    `/assistants/${assistantId}/threads/${threadId}/runs/${runId}/cancel`
+    `/v1/threads/${threadId}/runs/${runId}/cancel`
   );
   return data;
 };
 
 exports.createRun = async (assistantId, threadId, options = {}) => {
   const { data } = await openaiClient.post(
-    `/assistants/${assistantId}/threads/${threadId}/runs`,
-    options
+    `/v1/threads/${threadId}/runs`,
+    { 
+      assistant_id: assistantId,
+      ...options
+    }
   );
   return data;
 };
 
 exports.getRun = async (assistantId, threadId, runId) => {
   const { data } = await openaiClient.get(
-    `/assistants/${assistantId}/threads/${threadId}/runs/${runId}`
+    `/v1/threads/${threadId}/runs/${runId}`
+  );
+  return data;
+};
+
+// Run steps operations
+exports.listRunSteps = async (assistantId, threadId, runId) => {
+  const { data } = await openaiClient.get(
+    `/threads/${threadId}/runs/${runId}/steps`
+  );
+  return data;
+};
+
+exports.getRunStep = async (assistantId, threadId, runId, stepId) => {
+  const { data } = await openaiClient.get(
+    `/threads/${threadId}/runs/${runId}/steps/${stepId}`
+  );
+  return data;
+};
+
+exports.submitToolOutputs = async (assistantId, threadId, runId, toolOutputs) => {
+  const { data } = await openaiClient.post(
+    `/threads/${threadId}/runs/${runId}/submit_tool_outputs`,
+    { tool_outputs: toolOutputs }
+  );
+  return data;
+};
+
+// Create thread and run in one call
+exports.createThreadAndRun = async (assistantId, options = {}) => {
+  const { data } = await openaiClient.post(
+    `/threads/runs`,
+    {
+      assistant_id: assistantId,
+      ...options
+    }
   );
   return data;
 };
@@ -150,7 +260,7 @@ exports.getRun = async (assistantId, threadId, runId) => {
 // Streaming run
 exports.createStreamingRun = async (assistantId, threadId) => {
   const response = await openaiClient.post(
-    `/assistants/${assistantId}/threads/${threadId}/runs`,
+    `/threads/${threadId}/runs`,
     { 
       assistant_id: assistantId,
       stream: true 
@@ -164,4 +274,13 @@ exports.createStreamingRun = async (assistantId, threadId) => {
     }
   );
   return response.data;
+};
+
+// Ask AI
+exports.askAI = async (assistantId, query) => {
+  const { data } = await openaiClient.post(
+    `/assistants/${assistantId}/threads/ask`,
+    { query }
+  );
+  return data;
 }; 
