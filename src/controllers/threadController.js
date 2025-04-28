@@ -31,6 +31,73 @@ exports.createThread = async (req, res) => {
   }
 };
 
+exports.postRun = async (req, res) =>{
+  const {threadId} = req.params
+  try {
+    const response = await openai.createRunWithThread(threadId)
+    // {
+    //   "id": "run_qVYsWok6OCjHxkajpIrdHuVP",
+    //   "object": "thread.run",
+    //   "thread_id": "thread_j4dc1TiHPfkviKUHNi4aAsA6",
+    //   "assistant_id": "asst_qvXmYlZV8zhABI2RtPzDfV6z",
+    //   "status": "queued",
+    //   "created_at": 1736340403,
+    //   "expires_at": null,
+    //   "cancelled_at": null,
+    //   "completed_at": null,
+    //   "failed_at": null,
+    //   "incomplete_at": null,
+    //   "incomplete_details": null,
+    //   "instructions": "You are a personal math tutor",
+    //   "additional_instructions": null
+    // }
+
+   
+    res.status(201).json({
+      id: response.id,
+      status: response.queued,
+      created_at: response.created_at
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      error: err.message,
+      details: err.stack
+    });
+  }
+}
+
+exports.pollRunThread = async (req, res) =>{
+  const {threadId, runId} = req.params
+  try {
+    const response = await openai.pollRunWithThreadId(threadId, runId)
+    // todo implement stream here
+    // Keep polling until status changes to "completed". 
+    // {
+    //   "id": "run_qVYsWok6OCjHxkajpIrdHuVP",
+    //   "object": "thread.run",
+    //   "thread_id": "thread_j4dc1TiHPfkviKUHNi4aAsA6",
+    //   "assistant_id": "asst_qvXmYlZV8zhABI2RtPzDfV6z",
+    //   "status": "completed",
+    //   "created_at": 1736340403,
+    //   "completed_at": 1736340406,
+    //   "cancelled_at": null,
+    //   "expires_at": null,
+    //   "failed_at": null,
+    //   "incomplete_at": null,
+    //   "incomplete_details": null,
+    //   "instructions": "You are a personal math tutor"
+    // }
+    res.status(20).json(response);
+  } catch (error) {
+    res.status(500).json({ 
+      error: err.message,
+      details: err.stack
+    });
+  }
+}
+
+
+
 /**
  * List threads for an assistance.
  */
@@ -458,6 +525,8 @@ exports.askAI = async (req, res) => {
     
     // Add the user's query as a message
     await openai.addMessage(assistantId, thread.id, 'user', query);
+    // Also append the user message to the local message store
+    await fileStorage.addMessage(thread.id, 'user', query);
     
     // Create and run the assistant
     const run = await openai.createRun(assistantId, thread.id, {

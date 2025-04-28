@@ -65,6 +65,19 @@ exports.createThread = async (assistantId) => {
   return data;
 };
 
+exports.createRunWithThread = async (thread_id) => {
+  const { data } = await openaiClient.post(
+   `/threads/${thread_id}/runs`
+  );
+  return data;
+};
+
+exports.pollRunWithThreadId = async (thread_id, run_id)  => {
+  const { data } = await openaiClient.post(
+   `/threads/${thread_id}/runs/${run_id}`
+  );
+  return data;
+};
 exports.listThreads = async (assistantId) => {
   const { data } = await openaiClient.get(
     `threads`

@@ -12,7 +12,9 @@ const {
   createThreadAndRun,
   listRuns,
   askAI,
-  deleteThread
+
+  postRun,
+  pollRunThread
 } = require("../controllers/threadController");
 const router = express.Router({ mergeParams: true });
 
@@ -26,6 +28,10 @@ router.post("/ask", askAI);
 
 // Thread-specific routes
 router.get("/:threadId/messages", listMessages);
+
+router.post("/:threadId/runs", postRun);
+router.get("/:threadId/runs/:runId", pollRunThread);
+
 router.post("/:threadId/messages", addMessage);
 router.get("/:threadId/messages/:messageId", getMessage);
 router.post("/:threadId/messages/:messageId", modifyMessage);

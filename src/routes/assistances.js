@@ -13,6 +13,6 @@ router.delete("/:assistantId", deleteAssistance);
 
 // mount sub‐routers
 router.use("/:assistantId/files", fileRoutes);
-router.use("/:assistantId/threads", threadRoutes);
+router.use("/threads", threadRoutes);
 
 module.exports = router;
