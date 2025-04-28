@@ -3,7 +3,8 @@ const {
   createThread,
   listThreads,
   addMessage,
-  runThread
+  runThread,
+  runThreadStream
 } = require("../controllers/threadController");
 const router = express.Router({ mergeParams: true });
 
