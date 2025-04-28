@@ -1,15 +1,13 @@
 # API Endpoints
 
-This service integrates with the OpenAI Assistants API to manage intelligent agents, their files, and conversation threads.
+This service integrates with the OpenAI Assistants API to manage intelligent agents, their files (vector store), and conversation threads.
 
 ## Assistants
 
 ### Create an Assistant
-
 POST `/assistances`
 
 **Request body**  
-
 ```json
 {
   "name": "string",
@@ -18,7 +16,6 @@ POST `/assistances`
 ```
 
 **Response (201 Created)**  
-
 ```json
 {
   "id": "assistant-id",
@@ -31,11 +28,9 @@ POST `/assistances`
 ```
 
 ### List All Assistants
-
 GET `/assistances`
 
 **Response (200 OK)**  
-
 ```json
 [
   {
@@ -51,11 +46,9 @@ GET `/assistances`
 ```
 
 ### Retrieve an Assistant
-
 GET `/assistances/:assistanceId`
 
 **Response (200 OK)**  
-
 ```json
 {
   "id": "assistant-id",
@@ -68,11 +61,9 @@ GET `/assistances/:assistanceId`
 ```
 
 ### Update an Assistant
-
 PUT `/assistances/:assistanceId`
 
 **Request body**  
-
 ```json
 {
   "name": "string (optional)",
@@ -83,7 +74,6 @@ PUT `/assistances/:assistanceId`
 ```
 
 **Response (200 OK)**  
-
 ```json
 {
   "id": "assistant-id",
@@ -96,7 +86,6 @@ PUT `/assistances/:assistanceId`
 ```
 
 ### Delete an Assistant
-
 DELETE `/assistances/:assistanceId`
 
 **Response (204 No Content)**
@@ -105,26 +94,22 @@ DELETE `/assistances/:assistanceId`
 
 ## Files
 
-Files uploaded under an assistant are stored via OpenAI and attached to the assistant.
+Files uploaded under an assistant are ingested into an OpenAI Vector Store for semantic retrieval.
 
 ### Upload a File
-
 POST `/assistances/:assistanceId/files`  
 **Form Data**  
-
-- `file`: file to upload
+- `file`: file to upload (PDF, DOCX, TXT; max 5 MB)
 
 **Response (201 Created)**  
-
 ```json
 {
+  "vectorStoreId": "string",
   "file": {
-    "id": "file-id",
-    "object": "file",
-    "bytes": 12345,
-    "created_at": 1616161616,
-    "filename": "example.txt",
-    // ... other OpenAI file metadata ...
+    "id": "string",
+    "originalName": "string",
+    "mimetype": "string",
+    "size": 12345
   },
   "assistant": {
     "id": "assistant-id",
@@ -132,31 +117,24 @@ POST `/assistances/:assistanceId/files`
     "name": "string",
     "instructions": "string",
     "model": "gpto",
-    // ... updated assistant metadata including new file in add_files ...
+    "tool_resources": {
+      "file_search": {
+        "vector_store_ids": ["string"]
+      }
+    }
+    // ... other updated assistant metadata ...
   }
 }
 ```
 
 ### Delete a File
-
 DELETE `/assistances/:assistanceId/files/:fileId`
 
 **Response (200 OK)**  
-
 ```json
 {
-  "assistant": {
-    "id": "assistant-id",
-    "object": "assistant",
-    "name": "string",
-    "instructions": "string",
-    "model": "gpto",
-    // ... updated assistant metadata without the removed file ...
-  },
-  "file": {
-    "id": "file-id",
-    "deleted": true
-  }
+  "id": "file-id",
+  "deleted": true
 }
 ```
 
@@ -167,11 +145,9 @@ DELETE `/assistances/:assistanceId/files/:fileId`
 Conversations under an assistant are organized in threads.
 
 ### Create a Thread
-
 POST `/assistances/:assistanceId/threads`
 
 **Response (201 Created)**  
-
 ```json
 {
   "id": "thread-id",
@@ -180,11 +156,9 @@ POST `/assistances/:assistanceId/threads`
 ```
 
 ### List Threads
-
 GET `/assistances/:assistanceId/threads`
 
 **Response (200 OK)**  
-
 ```json
 [
   {
@@ -196,11 +170,9 @@ GET `/assistances/:assistanceId/threads`
 ```
 
 ### Add a Message
-
 POST `/assistances/:assistanceId/threads/:threadId/messages`
 
 **Request body**  
-
 ```json
 {
   "role": "user" | "assistant",
@@ -209,7 +181,6 @@ POST `/assistances/:assistanceId/threads/:threadId/messages`
 ```
 
 **Response (201 Created)**  
-
 ```json
 {
   "id": "message-id",
@@ -221,11 +192,9 @@ POST `/assistances/:assistanceId/threads/:threadId/messages`
 ```
 
 ### Run a Thread
-
 POST `/assistances/:assistanceId/threads/:threadId/run`
 
 **Response (200 OK)**  
-
 ```json
 {
   "id": "message-id",

@@ -10,7 +10,8 @@ exports.createAssistance = async (req, res) => {
     const response = await openai.beta.assistants.create({
       name,
       model: "gpto",
-      instructions: instructions || "You are an intelligent agent. Always respond politely and get information from the knowledge base first, then use your own knowledge."
+      instructions: instructions || "You are an intelligent agent. Always respond politely and get information from the knowledge base first, then use your own knowledge.",
+      tools: [{ type: "file_search" }]
     });
     res.status(201).json(response);
   } catch (err) {
@@ -23,7 +24,7 @@ exports.createAssistance = async (req, res) => {
  */
 exports.listAssistances = async (req, res) => {
   try {
-const response = await openai.beta.assistants.list();
+    const response = await openai.beta.assistants.list();
     res.json(response.data);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -36,11 +37,11 @@ const response = await openai.beta.assistants.list();
 exports.getAssistance = async (req, res) => {
   try {
     const { assistanceId } = req.params;
-const response = await openai.beta.assistants.retrieve({
-      assistant_id: assistanceId
-    });
+    console.log("assistanceId", assistanceId);
+    const response = await openai.beta.assistants.retrieve(assistanceId);
     res.json(response);
   } catch (err) {
+    console.log(err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -50,14 +51,13 @@ const response = await openai.beta.assistants.retrieve({
  */
 exports.updateAssistance = async (req, res) => {
   try {
-const { assistanceId } = req.params;
+    const { assistanceId } = req.params;
     const { name, instructions, add_files, remove_files } = req.body;
-    const response = await openai.beta.assistants.update({
-      assistant_id: assistanceId,
+    const response = await openai.beta.assistants.update(assistanceId, {
       name,
       instructions,
-      add_files,    // optional array of { file_id }
-      remove_files  // optional array of file IDs to remove
+      add_files,
+      remove_files
     });
     res.json(response);
   } catch (err) {
@@ -71,9 +71,7 @@ const { assistanceId } = req.params;
 exports.deleteAssistance = async (req, res) => {
   try {
     const { assistanceId } = req.params;
-await openai.beta.assistants.del({
-      assistant_id: assistanceId
-    });
+    await openai.beta.assistants.del(assistanceId);
     res.status(204).send();
   } catch (err) {
     res.status(500).json({ error: err.message });
