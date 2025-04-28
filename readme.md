@@ -1,73 +1,175 @@
 # API Endpoints
 
-## POST /assistances  
+This service integrates with the OpenAI Assistants API to manage intelligent agents, their files, and conversation threads.
 
-Create a new assistance.  
+## Assistants
+
+### Create an Assistant
+
+POST `/assistances`
+
 **Request body**  
 
 ```json
-{ "name": "string" }
-```  
+{
+  "name": "string",
+  "instructions": "string (optional)"
+}
+```
 
 **Response (201 Created)**  
 
 ```json
 {
-  "id": "uuid",
+  "id": "assistant-id",
+  "object": "assistant",
   "name": "string",
-  "files": [],
-  "threads": {}
+  "instructions": "string",
+  "model": "gpto",
+  // ... other OpenAI assistant metadata ...
 }
 ```
 
-## GET /assistances  
+### List All Assistants
 
-List all assistances.  
+GET `/assistances`
+
 **Response (200 OK)**  
 
 ```json
 [
   {
-    "id": "uuid",
+    "id": "assistant-id",
+    "object": "assistant",
     "name": "string",
-    "files": [],
-    "threads": {}
+    "instructions": "string",
+    "model": "gpto",
+    // ...
   },
   ...
 ]
 ```
 
-## POST /assistances/:assistanceId/files  
+### Retrieve an Assistant
 
-Upload a file to an assistance.  
-**Response (201 Created)**  
+GET `/assistances/:assistanceId`
 
-```json
-{
-  "id": "file-id",
-  "object": "file",
-  "bytes": 12345,
-  "created_at": 1616161616,
-  "filename": "example.txt",
-  // ...other OpenAI file metadata
-}
-```
-
-## DELETE /assistances/:assistanceId/files/:fileId  
-
-Remove a file from an assistance.  
 **Response (200 OK)**  
 
 ```json
 {
-  "id": "file-id",
-  "deleted": true
+  "id": "assistant-id",
+  "object": "assistant",
+  "name": "string",
+  "instructions": "string",
+  "model": "gpto",
+  // ...
 }
 ```
 
-## POST /assistances/:assistanceId/threads  
+### Update an Assistant
 
-Create a new thread under an assistance.  
+PUT `/assistances/:assistanceId`
+
+**Request body**  
+
+```json
+{
+  "name": "string (optional)",
+  "instructions": "string (optional)",
+  "add_files": [{ "file_id": "string" }],    // optional
+  "remove_files": ["string"]                // optional
+}
+```
+
+**Response (200 OK)**  
+
+```json
+{
+  "id": "assistant-id",
+  "object": "assistant",
+  "name": "string",
+  "instructions": "string",
+  "model": "gpto",
+  // ...
+}
+```
+
+### Delete an Assistant
+
+DELETE `/assistances/:assistanceId`
+
+**Response (204 No Content)**
+
+---
+
+## Files
+
+Files uploaded under an assistant are stored via OpenAI and attached to the assistant.
+
+### Upload a File
+
+POST `/assistances/:assistanceId/files`  
+**Form Data**  
+
+- `file`: file to upload
+
+**Response (201 Created)**  
+
+```json
+{
+  "file": {
+    "id": "file-id",
+    "object": "file",
+    "bytes": 12345,
+    "created_at": 1616161616,
+    "filename": "example.txt",
+    // ... other OpenAI file metadata ...
+  },
+  "assistant": {
+    "id": "assistant-id",
+    "object": "assistant",
+    "name": "string",
+    "instructions": "string",
+    "model": "gpto",
+    // ... updated assistant metadata including new file in add_files ...
+  }
+}
+```
+
+### Delete a File
+
+DELETE `/assistances/:assistanceId/files/:fileId`
+
+**Response (200 OK)**  
+
+```json
+{
+  "assistant": {
+    "id": "assistant-id",
+    "object": "assistant",
+    "name": "string",
+    "instructions": "string",
+    "model": "gpto",
+    // ... updated assistant metadata without the removed file ...
+  },
+  "file": {
+    "id": "file-id",
+    "deleted": true
+  }
+}
+```
+
+---
+
+## Threads
+
+Conversations under an assistant are organized in threads.
+
+### Create a Thread
+
+POST `/assistances/:assistanceId/threads`
+
 **Response (201 Created)**  
 
 ```json
@@ -77,9 +179,10 @@ Create a new thread under an assistance.
 }
 ```
 
-## GET /assistances/:assistanceId/threads  
+### List Threads
 
-List all threads for an assistance.  
+GET `/assistances/:assistanceId/threads`
+
 **Response (200 OK)**  
 
 ```json
@@ -92,19 +195,11 @@ List all threads for an assistance.
 ]
 ```
 
-## POST /assistances/:assistanceId/threads/:threadId/messages  
+### Add a Message
 
-Add a message to a thread.  
+POST `/assistances/:assistanceId/threads/:threadId/messages`
+
 **Request body**  
-
-```json
-{ 
-  "role": "user" | "assistant",
-  "content": "string"
-}
-```  
-
-**Response (201 Created)**  
 
 ```json
 {
@@ -113,13 +208,29 @@ Add a message to a thread.
 }
 ```
 
-## POST /assistances/:assistanceId/threads/:threadId/run  
+**Response (201 Created)**  
 
-Send all messages in a thread to OpenAI and receive an assistant reply.  
+```json
+{
+  "id": "message-id",
+  "thread_id": "thread-id",
+  "role": "user" | "assistant",
+  "content": "string",
+  "created_at": 1616161616
+}
+```
+
+### Run a Thread
+
+POST `/assistances/:assistanceId/threads/:threadId/run`
+
 **Response (200 OK)**  
 
 ```json
 {
+  "id": "message-id",
+  "thread_id": "thread-id",
   "role": "assistant",
-  "content": "string"
+  "content": "string",
+  "created_at": 1616161616
 }
