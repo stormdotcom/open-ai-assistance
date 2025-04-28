@@ -94,7 +94,14 @@ DELETE `/assistances/:assistanceId`
 
 ## Files
 
-Files uploaded under an assistant are ingested into an OpenAI Vector Store for semantic retrieval.
+Files uploaded under an assistant are ingested into a single OpenAI Vector Store per assistant for semantic retrieval.
+
+### Get Vector Store IDs
+GET `/assistances/:assistanceId/files`
+**Response (200 OK)**
+```json
+{ "vectorStoreIds": ["string"] }
+```
 
 ### Upload a File
 POST `/assistances/:assistanceId/files`  
@@ -110,19 +117,6 @@ POST `/assistances/:assistanceId/files`
     "originalName": "string",
     "mimetype": "string",
     "size": 12345
-  },
-  "assistant": {
-    "id": "assistant-id",
-    "object": "assistant",
-    "name": "string",
-    "instructions": "string",
-    "model": "gpto",
-    "tool_resources": {
-      "file_search": {
-        "vector_store_ids": ["string"]
-      }
-    }
-    // ... other updated assistant metadata ...
   }
 }
 ```

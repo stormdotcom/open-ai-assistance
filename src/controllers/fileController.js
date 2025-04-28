@@ -1,12 +1,26 @@
- // Controller for file uploads
- const fs = require("fs");
+// Controller for file uploads using a single vector store per assistant
+const fs = require("fs");
 const path = require("path");
-const { v4: uuidv4 } = require("uuid");
 const { openai } = require("../services/openaiService");
- 
- /**
-  * Upload a file under an assistance.
-  */
+
+/**
+ * Fetch the vector store IDs for an assistance.
+ */
+exports.getVectorStore = async (req, res) => {
+  try {
+    const { assistanceId } = req.params;
+    const assistant = await openai.beta.assistants.retrieve(assistanceId);
+    const ids = assistant.tool_resources?.file_search?.vector_store_ids || [];
+    res.json({ vectorStoreIds: ids });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Upload a file under an assistance.
+ * Uses or creates a single vector store per assistant.
+ */
 exports.uploadFile = async (req, res) => {
   try {
     const { assistanceId } = req.params;
@@ -14,45 +28,56 @@ exports.uploadFile = async (req, res) => {
     if (!file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
-    // Upload file stream to vector store
     const fileStream = fs.createReadStream(file.path);
-    const vectorStore = await openai.vectorStores.create({
-      name: assistanceId
-    });
-    await openai.vectorStores.fileBatches.uploadAndPoll(vectorStore.id, [fileStream]);
-    const assistantUpdate = await openai.beta.assistants.update(assistanceId, {
-      tool_resources: { file_search: { vector_store_ids: [vectorStore.id] } }
-    });
+
+    // Retrieve assistant to check for existing vector store
+    const assistant = await openai.beta.assistants.retrieve(assistanceId);
+    let vectorStoreId;
+    const existingIds = assistant.tool_resources?.file_search?.vector_store_ids;
+    if (existingIds && existingIds.length > 0) {
+      vectorStoreId = existingIds[0];
+    } else {
+      // Create new vector store for this assistant
+      const vs = await openai.vectorStores.create({ name: assistanceId });
+      vectorStoreId = vs.id;
+      await openai.beta.assistants.update(assistanceId, {
+        tool_resources: { file_search: { vector_store_ids: [vectorStoreId] } }
+      });
+    }
+
+    // Batch upload file to vector store
+    await openai.vectorStores.fileBatches.createAndPoll(
+      vectorStoreId,
+      [fileStream]
+    );
+
     // Clean up local upload
     fs.unlinkSync(file.path);
+
     res.status(201).json({
-      vectorStoreId: vectorStore.id,
+      vectorStoreId,
       file: {
         id: file.filename,
         originalName: file.originalname,
         mimetype: file.mimetype,
         size: file.size
-      },
-      assistant: assistantUpdate
+      }
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
- 
- 
- /**
-  * Delete a file.
-  */
- exports.deleteFile = async (req, res) => {
-   try {
-     const { assistanceId, fileId } = req.params;
-     // Determine file path from fileId (requires lookup in store/db)
-     // For now, assume filename equals fileId
-     const filePath = path.join("uploads", fileId);
-     fs.unlinkSync(filePath);
-     res.json({ id: fileId, deleted: true });
-   } catch (err) {
-     res.status(500).json({ error: err.message });
-   }
- };
+
+/**
+ * Delete a local file.
+ */
+exports.deleteFile = async (req, res) => {
+  try {
+    const { fileId } = req.params;
+    const filePath = path.join("uploads", fileId);
+    fs.unlinkSync(filePath);
+    res.json({ id: fileId, deleted: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
