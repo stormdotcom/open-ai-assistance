@@ -2,11 +2,22 @@ require("dotenv").config();
 const express = require("express");
 const morgan = require("morgan");
 const bodyParser = require("body-parser");
+const rateLimit = require("express-rate-limit");
 const assistanceRoutes = require("./routes/assistances");
 const filesRoutes = require("./routes/files");
 const cors = require("cors");
 
 const app = express();
+
+// Rate limiting middleware: 100 requests per 15 minutes per IP
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
+
+app.use(limiter);
 app.use(bodyParser.json());
 app.use(cors({ origin: "http://localhost:5173" }));
 app.use(morgan("dev"));
