@@ -224,3 +224,29 @@ POST `/assistances/:assistantId/threads/:threadId/run`
   "content": "string",
   "created_at": 1616161616
 }
+
+```
+
+### Run a Thread (Streaming)
+
+POST `/assistances/:assistantId/threads/:threadId/run` (with streaming)
+
+This endpoint streams the assistant's reply in real time using Server-Sent Events (SSE).
+
+**Response (streaming, text/event-stream)**
+
+Each event contains a chunk of the assistant's reply:
+
+```
+data: { "id": "message-id", "content": "partial or full content..." }
+
+```
+
+**How to use:**
+- Set the `Accept` header to `text/event-stream` (or use an SSE-compatible client).
+- Listen for `data:` events and concatenate the `content` fields to reconstruct the full reply.
+
+**Example (curl):**
+```sh
+curl -N -H "Accept: text/event-stream" -X POST http://localhost:3000/assistances/asst_xxx/threads/thread_xxx/run
+```
