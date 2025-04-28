@@ -1,4 +1,13 @@
 const axios = require("axios");
+const { OpenAI } = require("openai");
+
+// Export OpenAI SDK client for use in controllers
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+  organization: process.env.OPENAI_ORGANIZATION,
+});
+
+exports.openai = openai;
 
 // Configure your HTTP client
 const openaiClient = axios.create({
@@ -14,44 +23,6 @@ const openaiClient = axios.create({
   }
 });
 
-// Add request interceptor
-openaiClient.interceptors.request.use(
-  config => {
-    console.log('🚀 Request:', {
-      method: config.method.toUpperCase(),
-      url: config.url,
-      headers: config.headers,
-      data: config.data
-    });
-    return config;
-  },
-  error => {
-    console.error('❌ Request Error:', error);
-    return Promise.reject(error);
-  }
-);
-
-// Add response interceptor
-openaiClient.interceptors.response.use(
-  response => {
-    console.log('✅ Response:', {
-      status: response.status,
-      statusText: response.statusText,
-      headers: response.headers,
-      data: response.data
-    });
-    return response;
-  },
-  error => {
-    console.error('❌ Response Error:', {
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data,
-      message: error.message
-    });
-    return Promise.reject(error);
-  }
-);
 
 // Assistant operations
 exports.createAssistant = async (name, instructions, model = "gpt-3.5-turbo") => {
@@ -88,7 +59,7 @@ exports.deleteAssistant = async (assistantId) => {
 // Thread operations
 exports.createThread = async (assistantId) => {
   const { data } = await openaiClient.post(
-    `/v1/threads`,
+    `threads`,
     {}
   );
   return data;
@@ -96,7 +67,14 @@ exports.createThread = async (assistantId) => {
 
 exports.listThreads = async (assistantId) => {
   const { data } = await openaiClient.get(
-    `/v1/threads`
+    `threads`
+  );
+  return data;
+};
+
+exports.deleteThread = async (thread_id) => {
+  const { data } = await openaiClient.get(
+     `/threads/${thread_id}`
   );
   return data;
 };
@@ -115,9 +93,7 @@ exports.addMessage = async (assistantId, threadId, role, content, fileIds = []) 
 };
 
 exports.listMessages = async (assistantId, threadId, options = {}) => {
-  const { data } = await openaiClient.get(
-    `/v1/threads/${threadId}/messages`,
-    { 
+  const params =     { 
       params: {
         limit: options.limit || 100,
         order: options.order || 'desc',
@@ -125,20 +101,23 @@ exports.listMessages = async (assistantId, threadId, options = {}) => {
         before: options.before
       }
     }
+  const { data } = await openaiClient.get(
+    `/threads/${threadId}/messages`
   );
   return data;
 };
 
 exports.getMessage = async (assistantId, threadId, messageId) => {
   const { data } = await openaiClient.get(
-    `/v1/threads/${threadId}/messages/${messageId}`
+    `/threads/${threadId}/messages/${messageId}`
   );
   return data;
 };
 
 exports.modifyMessage = async (assistantId, threadId, messageId, updates) => {
+  console.log("here")
   const { data } = await openaiClient.post(
-    `/v1/threads/${threadId}/messages/${messageId}`,
+    `/threads/${threadId}/messages/${messageId}`,
     updates
   );
   return data;
@@ -146,7 +125,7 @@ exports.modifyMessage = async (assistantId, threadId, messageId, updates) => {
 
 exports.deleteMessage = async (assistantId, threadId, messageId) => {
   const { data } = await openaiClient.delete(
-    `/v1/threads/${threadId}/messages/${messageId}`
+    `/threads/${threadId}/messages/${messageId}`
   );
   return data;
 };
@@ -283,4 +262,4 @@ exports.askAI = async (assistantId, query) => {
     { query }
   );
   return data;
-}; 
+};

@@ -6,12 +6,13 @@ const {
   listMessages,
   getMessage,
   modifyMessage,
-  deleteMessage,
+  deleteThreadApi,
   runThread,
   runThreadSync,
   createThreadAndRun,
   listRuns,
-  askAI
+  askAI,
+  deleteThread
 } = require("../controllers/threadController");
 const router = express.Router({ mergeParams: true });
 
@@ -28,7 +29,7 @@ router.get("/:threadId/messages", listMessages);
 router.post("/:threadId/messages", addMessage);
 router.get("/:threadId/messages/:messageId", getMessage);
 router.post("/:threadId/messages/:messageId", modifyMessage);
-router.delete("/:threadId/messages/:messageId", deleteMessage);
+router.delete("/:threadId", deleteThreadApi);
 router.post("/:threadId/run", runThread);
 router.post("/:threadId/run/sync", runThreadSync);
 router.post("/run", createThreadAndRun);

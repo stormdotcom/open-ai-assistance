@@ -1,12 +1,3 @@
-/**
- *  controllers/fileController.js
- *  --------------------------------
- *  Unified file endpoints for OpenAI Assistants
- *  • One vector-store per assistant (“kb-<assistantId>”)
- *  • MIME / size guard (PDF, DOCX, TXT ≤ 5 MB)
- *  • Full pagination when listing files
- *  • Proper detach + delete (legacy + vector-store)
- */
 
 const fs   = require("node:fs");
 const path = require("node:path");

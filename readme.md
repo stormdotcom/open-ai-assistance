@@ -250,3 +250,46 @@ data: { "id": "message-id", "content": "partial or full content..." }
 ```sh
 curl -N -H "Accept: text/event-stream" -X POST http://localhost:3000/assistances/asst_xxx/threads/thread_xxx/run
 ```
+
+---
+
+## Standalone Threads API
+
+These endpoints provide thread and message management outside the context of a specific assistant.
+
+| Method | Path                                   | Description                                                        |
+|--------|----------------------------------------|--------------------------------------------------------------------|
+| POST   | `/threads`                             | Create a new thread                                               |
+| GET    | `/threads`                             | List all threads                                                  |
+| GET    | `/threads/ask`                         | Ask AI about uploaded files (query param: `query`)                |
+| POST   | `/threads/ask`                         | Ask AI about uploaded files (body param: `query`)                 |
+| GET    | `/threads/:threadId/messages`          | List messages in a thread                                         |
+| POST   | `/threads/:threadId/messages`          | Add a message to a thread                                         |
+| GET    | `/threads/:threadId/messages/:messageId` | Get a specific message in a thread                              |
+| POST   | `/threads/:threadId/messages/:messageId` | Modify a message in a thread                                    |
+| DELETE | `/threads/:threadId/messages/:messageId` | Delete a message from a thread                                  |
+| POST   | `/threads/:threadId/run`               | Run a thread (streaming, SSE)                                     |
+| POST   | `/threads/:threadId/run/sync`          | Run a thread (non-streaming, returns full reply)                  |
+| POST   | `/threads/run`                         | Create a thread and run it in one call                            |
+| GET    | `/threads/:threadId/runs`              | List all runs for a thread                                        |
+
+**Notes:**
+- The `ask` endpoints allow querying uploaded files using natural language.
+- The `run` endpoints execute the assistant and return its reply (streaming or non-streaming).
+
+---
+
+## Standalone Files API
+
+These endpoints provide file management at the account level (not tied to a specific assistant).
+
+| Method | Path         | Description                                 |
+|--------|--------------|---------------------------------------------|
+| GET    | `/files`     | List all files in the account               |
+| GET    | `/files/all` | List all files with additional metadata     |
+| POST   | `/files`     | Upload a file (PDF, DOCX, TXT; ≤ 5 MB)      |
+| DELETE | `/files/:fileId` | Delete a file from the account         |
+
+**Notes:**
+- File uploads must be sent as `multipart/form-data` with a `file` field.
+- Only PDF, DOCX, and TXT files up to 5 MB are supported.

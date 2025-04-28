@@ -121,14 +121,19 @@ exports.listMessages = async (req, res) => {
   }
 };
 
-/**
- * Run a thread through OpenAI and save the assistant's reply.
- * Steps:
- * 1. Check and cancel any active runs
- * 2. Add user message to thread
- * 3. Create and poll a run
- * 4. Fetch the assistant's reply
- */
+
+exports.deleteThreadApi = async (req, res) => {
+  const { threadId } = req.params;
+  try {
+    await openai.deleteThread(threadId);
+    res.status(200).json({ 
+      message: "Delete Success"
+    });
+  } catch (error) {
+    
+  }
+}
+
 exports.runThread = async (req, res) => {
   const { assistantId, threadId } = req.params;
   const { content } = req.body;
