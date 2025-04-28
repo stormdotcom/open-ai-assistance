@@ -52,7 +52,7 @@ GET `/assistances`
 
 ### Retrieve an Assistant
 
-GET `/assistances/:assistanceId`
+GET `/assistances/:assistantId`
 
 **Response (200 OK)**  
 
@@ -69,7 +69,7 @@ GET `/assistances/:assistanceId`
 
 ### Update an Assistant
 
-PUT `/assistances/:assistanceId`
+PUT `/assistances/:assistantId`
 
 **Request body**  
 
@@ -97,7 +97,7 @@ PUT `/assistances/:assistanceId`
 
 ### Delete an Assistant
 
-DELETE `/assistances/:assistanceId`
+DELETE `/assistances/:assistantId`
 
 **Response (204 No Content)**
 
@@ -109,7 +109,7 @@ Files uploaded under an assistant are ingested into a single OpenAI Vector Store
 
 ### Get Vector Store IDs
 
-GET `/assistances/:assistanceId/files`
+GET `/assistances/:assistantId/files`
 **Response (200 OK)**
 
 ```json
@@ -118,7 +118,7 @@ GET `/assistances/:assistanceId/files`
 
 ### Upload a File
 
-POST `/assistances/:assistanceId/files`  
+POST `/assistances/:assistantId/files`  
 **Form Data**  
 
 - `file`: file to upload (PDF, DOCX, TXT; max 5 MB)
@@ -139,7 +139,7 @@ POST `/assistances/:assistanceId/files`
 
 ### Delete a File
 
-DELETE `/assistances/:assistanceId/files/:fileId`
+DELETE `/assistances/:assistantId/files/:fileId`
 
 **Response (200 OK)**  
 
@@ -158,7 +158,7 @@ Conversations under an assistant are organized in threads.
 
 ### Create a Thread
 
-POST `/assistances/:assistanceId/threads`
+POST `/assistances/:assistantId/threads`
 
 **Response (201 Created)**  
 
@@ -171,7 +171,7 @@ POST `/assistances/:assistanceId/threads`
 
 ### List Threads
 
-GET `/assistances/:assistanceId/threads`
+GET `/assistances/:assistantId/threads`
 
 **Response (200 OK)**  
 
@@ -187,7 +187,7 @@ GET `/assistances/:assistanceId/threads`
 
 ### Add a Message
 
-POST `/assistances/:assistanceId/threads/:threadId/messages`
+POST `/assistances/:assistantId/threads/:threadId/messages`
 
 **Request body**  
 
@@ -212,7 +212,7 @@ POST `/assistances/:assistanceId/threads/:threadId/messages`
 
 ### Run a Thread
 
-POST `/assistances/:assistanceId/threads/:threadId/run`
+POST `/assistances/:assistantId/threads/:threadId/run`
 
 **Response (200 OK)**  
 

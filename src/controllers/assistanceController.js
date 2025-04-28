@@ -37,9 +37,9 @@ exports.listAssistances = async (req, res) => {
  */
 exports.getAssistance = async (req, res) => {
   try {
-    const { assistanceId } = req.params;
-    console.log("assistanceId", assistanceId);
-    const response = await openai.beta.assistants.retrieve(assistanceId);
+    const { assistantId } = req.params;
+    console.log("assistantId", assistantId);
+    const response = await openai.beta.assistants.retrieve(assistantId);
     res.json(response);
   } catch (err) {
     console.log(err);
@@ -52,9 +52,9 @@ exports.getAssistance = async (req, res) => {
  */
 exports.updateAssistance = async (req, res) => {
   try {
-    const { assistanceId } = req.params;
+    const { assistantId } = req.params;
     const { name, instructions, add_files, remove_files } = req.body;
-    const response = await openai.beta.assistants.update(assistanceId, {
+    const response = await openai.beta.assistants.update(assistantId, {
       name,
       instructions,
       add_files,
@@ -71,8 +71,8 @@ exports.updateAssistance = async (req, res) => {
  */
 exports.deleteAssistance = async (req, res) => {
   try {
-    const { assistanceId } = req.params;
-    await openai.beta.assistants.del(assistanceId);
+    const { assistantId } = req.params;
+    await openai.beta.assistants.del(assistantId);
     res.status(204).send();
   } catch (err) {
     res.status(500).json({ error: err.message });

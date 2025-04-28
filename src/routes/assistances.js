@@ -7,12 +7,12 @@ const router = express.Router();
 
 // router.post("/", createAssistance);
 router.get("/", listAssistances);
-router.get("/:assistanceId", getAssistance);
-router.put("/:assistanceId", updateAssistance);
-router.delete("/:assistanceId", deleteAssistance);
+router.get("/:assistantId", getAssistance);
+router.put("/:assistantId", updateAssistance);
+router.delete("/:assistantId", deleteAssistance);
 
 // mount sub‐routers
-router.use("/:assistanceId/files", fileRoutes);
-router.use("/:assistanceId/threads", threadRoutes);
+router.use("/:assistantId/files", fileRoutes);
+router.use("/:assistantId/threads", threadRoutes);
 
 module.exports = router;

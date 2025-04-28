@@ -8,12 +8,12 @@ const { openai } = require("../services/openaiService");
  */
 exports.createThread = async (req, res) => {
   try {
-    const { assistanceId } = req.params;
-    const assistance = await assistanceModel.getAssistanceById(assistanceId);
+    const { assistantId } = req.params;
+    const assistance = await assistanceModel.getAssistanceById(assistantId);
     if (!assistance) {
       return res.status(404).json({ error: "Assistance not found" });
     }
-    const thread = await threadModel.createThread(assistanceId);
+    const thread = await threadModel.createThread(assistantId);
     res.status(201).json(thread);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -25,12 +25,12 @@ exports.createThread = async (req, res) => {
  */
 exports.listThreads = async (req, res) => {
   try {
-    const { assistanceId } = req.params;
-    const assistance = await assistanceModel.getAssistanceById(assistanceId);
+    const { assistantId } = req.params;
+    const assistance = await assistanceModel.getAssistanceById(assistantId);
     if (!assistance) {
       return res.status(404).json({ error: "Assistance not found" });
     }
-    const threads = await threadModel.listThreads(assistanceId);
+    const threads = await threadModel.listThreads(assistantId);
     res.json(threads);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -42,8 +42,8 @@ exports.listThreads = async (req, res) => {
  */
 exports.addMessage = async (req, res) => {
   try {
-    const { assistanceId, threadId } = req.params;
-    const assistance = await assistanceModel.getAssistanceById(assistanceId);
+    const { assistantId, threadId } = req.params;
+    const assistance = await assistanceModel.getAssistanceById(assistantId);
     if (!assistance) {
       return res.status(404).json({ error: "Assistance not found" });
     }
@@ -64,8 +64,8 @@ exports.addMessage = async (req, res) => {
  */
 exports.runThread = async (req, res) => {
   try {
-    const { assistanceId, threadId } = req.params;
-    const assistance = await assistanceModel.getAssistanceById(assistanceId);
+    const { assistantId, threadId } = req.params;
+    const assistance = await assistanceModel.getAssistanceById(assistantId);
     if (!assistance) {
       return res.status(404).json({ error: "Assistance not found" });
     }

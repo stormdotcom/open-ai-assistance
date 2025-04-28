@@ -1,7 +1,7 @@
 const express = require("express");
 const multer = require("multer");
 const path = require("path");
-const { getVectorStore, uploadFile, deleteFile } = require("../controllers/fileController");
+const { getVectorStore, uploadFile, deleteFile, listFiles, listAllFiles } = require("../controllers/fileController");
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "uploads/");
@@ -25,7 +25,8 @@ const upload = multer({
 });
 const router = express.Router({ mergeParams: true });
 
-router.get("/", getVectorStore);
+router.get("/", listFiles);
+router.get("/all", listAllFiles);
 router.post("/", upload.single("file"), uploadFile);
 router.delete("/:fileId", deleteFile);
 

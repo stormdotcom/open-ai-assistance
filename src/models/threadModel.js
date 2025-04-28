@@ -3,27 +3,27 @@ const { v4: uuidv4 } = require('uuid');
 
 /**
  * Create a new thread for an assistance.
- * @param {string} assistanceId
+ * @param {string} assistantId
  * @returns {Promise<Object>} The created thread record.
  */
-async function createThread(assistanceId) {
+async function createThread(assistantId) {
   const id = uuidv4();
   const result = await pool.query(
     'INSERT INTO threads (id, assistance_id) VALUES ($1, $2) RETURNING *',
-    [id, assistanceId]
+    [id, assistantId]
   );
   return result.rows[0];
 }
 
 /**
  * List threads for an assistance.
- * @param {string} assistanceId
+ * @param {string} assistantId
  * @returns {Promise<Array>} List of thread records.
  */
-async function listThreads(assistanceId) {
+async function listThreads(assistantId) {
   const result = await pool.query(
     'SELECT * FROM threads WHERE assistance_id = $1',
-    [assistanceId]
+    [assistantId]
   );
   return result.rows;
 }
