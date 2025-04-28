@@ -33,7 +33,7 @@ async function createThread(assistantId, openaiThreadId) {
   return thread;
 }
 
-async function listThreads(assistantId) {
+async function listThreads() {
   const files = await fs.readdir(THREADS_DIR);
   const threads = await Promise.all(
     files
@@ -44,7 +44,7 @@ async function listThreads(assistantId) {
       })
   );
 
-  return threads.filter(thread => thread.assistant_id === assistantId);
+  return threads
 }
 
 async function getThreadById(threadId) {

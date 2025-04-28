@@ -103,12 +103,13 @@ exports.pollRunThread = async (req, res) =>{
  */
 exports.listThreads = async (req, res) => {
   try {
-    const { assistantId } = req.params;
     // Get threads from file system
-    const threads = await fileStorage.listThreads(assistantId);
-    res.json(threads);
+    const threads = await fileStorage.listThreads();
+    const openAi= await openai.listThreads()
+    console.log(threads)
+    res.json({threads, openAi});
   } catch (err) {
-    console.error('Error listing threads:', err);
+    
     res.status(500).json({ 
       error: err.message,
       details: err.stack

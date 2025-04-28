@@ -25,7 +25,7 @@ const openaiClient = axios.create({
 
 
 // Assistant operations
-exports.createAssistant = async (name, instructions, model = "gpt-3.5-turbo") => {
+exports.createAssistant = async (name, instructions, model = "gpt-4o") => {
   const { data } = await openaiClient.post(
     "/assistants",
     { name, instructions, model }
@@ -78,7 +78,7 @@ exports.pollRunWithThreadId = async (thread_id, run_id)  => {
   );
   return data;
 };
-exports.listThreads = async (assistantId) => {
+exports.listThreads = async () => {
   const { data } = await openaiClient.get(
     `threads`
   );
