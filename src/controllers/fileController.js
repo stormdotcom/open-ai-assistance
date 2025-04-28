@@ -19,7 +19,8 @@ exports.getVectorStore = async (req, res) => {
 
 /**
  * Upload a file under an assistance.
- * Uses or creates a single vector store per assistant.
+ * Creates or reuses a single vector store per assistant, 
+ * then uploads the file to the assistant.
  */
 exports.uploadFile = async (req, res) => {
   try {
@@ -28,40 +29,29 @@ exports.uploadFile = async (req, res) => {
     if (!file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
-    const fileStream = fs.createReadStream(file.path);
 
-    // Retrieve assistant to check for existing vector store
-    const assistant = await openai.beta.assistants.retrieve(assistanceId);
-    let vectorStoreId;
-    const existingIds = assistant.tool_resources?.file_search?.vector_store_ids;
-    if (existingIds && existingIds.length > 0) {
-      vectorStoreId = existingIds[0];
-    } else {
-      // Create new vector store for this assistant
-      const vs = await openai.vectorStores.create({ name: assistanceId });
-      vectorStoreId = vs.id;
-      await openai.beta.assistants.update(assistanceId, {
-        tool_resources: { file_search: { vector_store_ids: [vectorStoreId] } }
-      });
-    }
+    // First, upload the file to OpenAI
+    const uploadedFile = await openai.files.create({
+      file: fs.createReadStream(file.path),
+      purpose: "assistants"
+    });
 
-    // Batch upload file to vector store
-    await openai.vectorStores.fileBatches.createAndPoll(
-      vectorStoreId,
-      [fileStream]
-    );
+    // Then, attach the file to the assistant
+    const assistant = await openai.beta.assistants.update(assistanceId, {
+      file_ids: [uploadedFile.id]
+    });
 
-    // Clean up local upload
+    // Clean up local file
     fs.unlinkSync(file.path);
 
     res.status(201).json({
-      vectorStoreId,
       file: {
-        id: file.filename,
+        id: uploadedFile.id,
         originalName: file.originalname,
         mimetype: file.mimetype,
         size: file.size
-      }
+      },
+      assistant
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

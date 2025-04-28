@@ -1,4 +1,5 @@
 // Controller for OpenAI Assistants API
+const { SYSTEM_INSTRUCTIONS } = require("../constant");
 const { openai } = require("../services/openaiService");
 
 /**
@@ -6,11 +7,11 @@ const { openai } = require("../services/openaiService");
  */
 exports.createAssistance = async (req, res) => {
   try {
-    const { name, instructions } = req.body;
+    const { name, instructions =""} = req.body;
     const response = await openai.beta.assistants.create({
       name,
       model: "gpto",
-      instructions: instructions || "You are an intelligent agent. Always respond politely and get information from the knowledge base first, then use your own knowledge.",
+      instructions: instructions+ SYSTEM_INSTRUCTIONS,
       tools: [{ type: "file_search" }]
     });
     res.status(201).json(response);

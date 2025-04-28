@@ -5,9 +5,11 @@ This service integrates with the OpenAI Assistants API to manage intelligent age
 ## Assistants
 
 ### Create an Assistant
+
 POST `/assistances`
 
 **Request body**  
+
 ```json
 {
   "name": "string",
@@ -16,6 +18,7 @@ POST `/assistances`
 ```
 
 **Response (201 Created)**  
+
 ```json
 {
   "id": "assistant-id",
@@ -28,9 +31,11 @@ POST `/assistances`
 ```
 
 ### List All Assistants
+
 GET `/assistances`
 
 **Response (200 OK)**  
+
 ```json
 [
   {
@@ -46,9 +51,11 @@ GET `/assistances`
 ```
 
 ### Retrieve an Assistant
+
 GET `/assistances/:assistanceId`
 
 **Response (200 OK)**  
+
 ```json
 {
   "id": "assistant-id",
@@ -61,9 +68,11 @@ GET `/assistances/:assistanceId`
 ```
 
 ### Update an Assistant
+
 PUT `/assistances/:assistanceId`
 
 **Request body**  
+
 ```json
 {
   "name": "string (optional)",
@@ -74,6 +83,7 @@ PUT `/assistances/:assistanceId`
 ```
 
 **Response (200 OK)**  
+
 ```json
 {
   "id": "assistant-id",
@@ -86,6 +96,7 @@ PUT `/assistances/:assistanceId`
 ```
 
 ### Delete an Assistant
+
 DELETE `/assistances/:assistanceId`
 
 **Response (204 No Content)**
@@ -97,18 +108,23 @@ DELETE `/assistances/:assistanceId`
 Files uploaded under an assistant are ingested into a single OpenAI Vector Store per assistant for semantic retrieval.
 
 ### Get Vector Store IDs
+
 GET `/assistances/:assistanceId/files`
 **Response (200 OK)**
+
 ```json
 { "vectorStoreIds": ["string"] }
 ```
 
 ### Upload a File
+
 POST `/assistances/:assistanceId/files`  
 **Form Data**  
+
 - `file`: file to upload (PDF, DOCX, TXT; max 5 MB)
 
 **Response (201 Created)**  
+
 ```json
 {
   "vectorStoreId": "string",
@@ -122,9 +138,11 @@ POST `/assistances/:assistanceId/files`
 ```
 
 ### Delete a File
+
 DELETE `/assistances/:assistanceId/files/:fileId`
 
 **Response (200 OK)**  
+
 ```json
 {
   "id": "file-id",
@@ -139,9 +157,11 @@ DELETE `/assistances/:assistanceId/files/:fileId`
 Conversations under an assistant are organized in threads.
 
 ### Create a Thread
+
 POST `/assistances/:assistanceId/threads`
 
 **Response (201 Created)**  
+
 ```json
 {
   "id": "thread-id",
@@ -150,9 +170,11 @@ POST `/assistances/:assistanceId/threads`
 ```
 
 ### List Threads
+
 GET `/assistances/:assistanceId/threads`
 
 **Response (200 OK)**  
+
 ```json
 [
   {
@@ -164,9 +186,11 @@ GET `/assistances/:assistanceId/threads`
 ```
 
 ### Add a Message
+
 POST `/assistances/:assistanceId/threads/:threadId/messages`
 
 **Request body**  
+
 ```json
 {
   "role": "user" | "assistant",
@@ -175,6 +199,7 @@ POST `/assistances/:assistanceId/threads/:threadId/messages`
 ```
 
 **Response (201 Created)**  
+
 ```json
 {
   "id": "message-id",
@@ -186,9 +211,11 @@ POST `/assistances/:assistanceId/threads/:threadId/messages`
 ```
 
 ### Run a Thread
+
 POST `/assistances/:assistanceId/threads/:threadId/run`
 
 **Response (200 OK)**  
+
 ```json
 {
   "id": "message-id",
