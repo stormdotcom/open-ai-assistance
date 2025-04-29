@@ -9,13 +9,13 @@ const fileStorage = require("../services/fileStorage");
 exports.createThread = async (req, res) => {
   try {
     const { assistantId } = req.params;
-    
+
     // Create thread using OpenAI API
     const openaiThread = await openai.createThread(assistantId);
-    
+
     // Save thread in file system
     const localThread = await fileStorage.createThread(assistantId, openaiThread.id);
-    
+
     res.status(201).json({
       id: localThread.id,
       openai_thread_id: openaiThread.id,
@@ -24,17 +24,18 @@ exports.createThread = async (req, res) => {
     });
   } catch (err) {
     console.error('Error creating thread:', err);
-    res.status(500).json({ 
+    res.status(500).json({
       error: err.message,
       details: err.stack
     });
   }
 };
 
-exports.postRun = async (req, res) =>{
-  const {threadId} = req.params
+exports.postRun = async (req, res) => {
+  const { threadId } = req.params;
+  const { assistant_id } = req.body;
   try {
-    const response = await openai.createRunWithThread(threadId)
+    const response = await openai.createRunWithThread(threadId, assistant_id)
     // {
     //   "id": "run_qVYsWok6OCjHxkajpIrdHuVP",
     //   "object": "thread.run",
@@ -52,22 +53,23 @@ exports.postRun = async (req, res) =>{
     //   "additional_instructions": null
     // }
 
-   
+
     res.status(201).json({
       id: response.id,
       status: response.queued,
       created_at: response.created_at
     });
   } catch (error) {
-    res.status(500).json({ 
-      error: err.message,
-      details: err.stack
+    console.log(error)
+    res.status(500).json({
+      error: error.message,
+      details: error.stack
     });
   }
 }
 
-exports.pollRunThread = async (req, res) =>{
-  const {threadId, runId} = req.params
+exports.pollRunThread = async (req, res) => {
+  const { threadId, runId } = req.params
   try {
     const response = await openai.pollRunWithThreadId(threadId, runId)
     // todo implement stream here
@@ -87,11 +89,11 @@ exports.pollRunThread = async (req, res) =>{
     //   "incomplete_details": null,
     //   "instructions": "You are a personal math tutor"
     // }
-    res.status(20).json(response);
+    res.status(200).json(response);
   } catch (error) {
-    res.status(500).json({ 
-      error: err.message,
-      details: err.stack
+    res.status(500).json({
+      error: error.message,
+      details: error.stack
     });
   }
 }
@@ -101,16 +103,15 @@ exports.pollRunThread = async (req, res) =>{
 /**
  * List threads for an assistance.
  */
-exports.listThreads = async (req, res) => {
+exports.listThreadsHandler = async (req, res) => {
   try {
     // Get threads from file system
     const threads = await fileStorage.listThreads();
-    const openAi= await openai.listThreads()
-    console.log(threads)
-    res.json({threads, openAi});
+
+    res.json(threads);
   } catch (err) {
-    
-    res.status(500).json({ 
+
+    res.status(500).json({
       error: err.message,
       details: err.stack
     });
@@ -122,23 +123,16 @@ exports.listThreads = async (req, res) => {
  */
 exports.addMessage = async (req, res) => {
   try {
-    const { assistantId, threadId } = req.params;
-    const { role, content, file_ids } = req.body;
-    
-    // Add message using OpenAI API
-    const openaiMessage = await openai.addMessage(assistantId, threadId, role, content, file_ids);
-    
-    // Save message in file system
-    const localMessage = await fileStorage.addMessage(threadId, role, content);
-    
-    res.status(201).json({
-      ...localMessage,
-      openai_message_id: openaiMessage.id,
-      file_ids: openaiMessage.file_ids
-    });
+
+    const { threadId } = req.params;
+    const { role, content } = req.body;
+      console.log("req.body;", role, content);
+    const openaiMessage = await openai.addMessage(threadId, role, content);
+
+    res.status(201).json(openaiMessage);
   } catch (err) {
     console.error('Error adding message:', err);
-    res.status(500).json({ 
+    res.status(500).json({
       error: err.message,
       details: err.stack
     });
@@ -152,7 +146,7 @@ exports.listMessages = async (req, res) => {
   try {
     const { assistantId, threadId } = req.params;
     const { limit, order, after, before } = req.query;
-    
+
     // Get messages from OpenAI with context
     const messages = await openai.listMessages(assistantId, threadId, {
       limit: parseInt(limit) || 100,
@@ -160,10 +154,10 @@ exports.listMessages = async (req, res) => {
       after,
       before
     });
-    
+
     // Get messages from file system
     const localMessages = await fileStorage.listMessages(threadId);
-    
+
     // Combine local and OpenAI messages
     const combinedMessages = messages.data.map(openaiMsg => {
       const localMsg = localMessages.find(m => m.content === openaiMsg.content);
@@ -173,7 +167,7 @@ exports.listMessages = async (req, res) => {
         file_ids: openaiMsg.file_ids || []
       };
     });
-    
+
     res.json({
       data: combinedMessages,
       has_more: messages.has_more,
@@ -182,7 +176,7 @@ exports.listMessages = async (req, res) => {
     });
   } catch (err) {
     console.error('Error listing messages:', err);
-    res.status(500).json({ 
+    res.status(500).json({
       error: err.message,
       details: err.stack
     });
@@ -194,11 +188,11 @@ exports.deleteThreadApi = async (req, res) => {
   const { threadId } = req.params;
   try {
     await openai.deleteThread(threadId);
-    res.status(200).json({ 
+    res.status(200).json({
       message: "Delete Success"
     });
   } catch (error) {
-    
+
   }
 }
 
@@ -212,13 +206,13 @@ exports.runThread = async (req, res) => {
     const active = runs.data.filter(r =>
       r.status === "queued" || r.status === "in_progress"
     );
-    
+
     if (active.length > 0) {
       // Cancel all active runs
       await Promise.all(
         active.map(r => openai.cancelRun(assistantId, threadId, r.id))
       );
-      
+
       // Wait for runs to be cancelled
       let allCancelled = false;
       while (!allCancelled) {
@@ -373,13 +367,13 @@ exports.runThreadSync = async (req, res) => {
 exports.getMessage = async (req, res) => {
   try {
     const { assistantId, threadId, messageId } = req.params;
-    
+
     // Get message from OpenAI
     const message = await openai.getMessage(assistantId, threadId, messageId);
-    
+
     // Get local message
     const localMessage = await fileStorage.getMessage(messageId);
-    
+
     res.json({
       ...message,
       local_id: localMessage?.id,
@@ -387,7 +381,7 @@ exports.getMessage = async (req, res) => {
     });
   } catch (err) {
     console.error('Error getting message:', err);
-    res.status(500).json({ 
+    res.status(500).json({
       error: err.message,
       details: err.stack
     });
@@ -401,14 +395,14 @@ exports.modifyMessage = async (req, res) => {
   try {
     const { assistantId, threadId, messageId } = req.params;
     const updates = req.body;
-    
+
     // Modify message in OpenAI
     const message = await openai.modifyMessage(assistantId, threadId, messageId, updates);
-    
+
     res.json(message);
   } catch (err) {
     console.error('Error modifying message:', err);
-    res.status(500).json({ 
+    res.status(500).json({
       error: err.message,
       details: err.stack
     });
@@ -421,21 +415,21 @@ exports.modifyMessage = async (req, res) => {
 exports.deleteMessage = async (req, res) => {
   try {
     const { assistantId, threadId, messageId } = req.params;
-    
+
     // Delete message from OpenAI
     await openai.deleteMessage(assistantId, threadId, messageId);
-    
+
     // Delete message from file system
     const result = await fileStorage.deleteMessage(messageId);
-    
+
     if (!result.deleted) {
       return res.status(404).json({ error: 'Message not found' });
     }
-    
+
     res.json(result);
   } catch (err) {
     console.error('Error deleting message:', err);
-    res.status(500).json({ 
+    res.status(500).json({
       error: err.message,
       details: err.stack
     });
@@ -467,7 +461,7 @@ exports.createThreadAndRun = async (req, res) => {
     });
   } catch (err) {
     console.error('Error creating thread and run:', err);
-    res.status(500).json({ 
+    res.status(500).json({
       error: err.message,
       details: err.stack
     });
@@ -480,14 +474,14 @@ exports.createThreadAndRun = async (req, res) => {
 exports.listRuns = async (req, res) => {
   try {
     const { assistantId, threadId } = req.params;
-    
+
     // Get runs from OpenAI
     const runs = await openai.listRuns(assistantId, threadId);
-    
+
     res.json(runs.data);
   } catch (err) {
     console.error('Error listing runs:', err);
-    res.status(500).json({ 
+    res.status(500).json({
       error: err.message,
       details: err.stack
     });
@@ -506,7 +500,7 @@ exports.askAI = async (req, res) => {
     const query = req.method === 'GET' ? req.query.query : req.body.query;
 
     if (!query) {
-      res.status(400).json({ 
+      res.status(400).json({
         error: 'Query is required',
         details: 'Please provide a query parameter in the request'
       });
@@ -523,12 +517,12 @@ exports.askAI = async (req, res) => {
 
     // Create a new thread
     thread = await openai.createThread();
-    
+
     // Add the user's query as a message
     await openai.addMessage(assistantId, thread.id, 'user', query);
     // Also append the user message to the local message store
     await fileStorage.addMessage(thread.id, 'user', query);
-    
+
     // Create and run the assistant
     const run = await openai.createRun(assistantId, thread.id, {
       instructions: "Please answer the user's question based on the uploaded files. If the information is not available in the files, say so clearly."
@@ -578,7 +572,7 @@ exports.askAI = async (req, res) => {
 
   } catch (err) {
     console.error('Error in askAI:', err);
-    
+
     // Clean up thread if it was created
     if (thread) {
       try {
@@ -589,7 +583,7 @@ exports.askAI = async (req, res) => {
     }
 
     // Send error response
-    res.status(err.status || 500).json({ 
+    res.status(err.status || 500).json({
       error: err.message,
       details: err.stack,
       code: err.code

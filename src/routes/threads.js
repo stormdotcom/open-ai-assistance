@@ -1,7 +1,7 @@
 const express = require("express");
 const {
   createThread,
-  listThreads,
+  listThreadsHandler,
   addMessage,
   listMessages,
   getMessage,
@@ -19,8 +19,8 @@ const {
 const router = express.Router({ mergeParams: true });
 
 // Base routes
-router.post("/", createThread);
-router.get("/", listThreads);
+router.post("/create", createThread);
+router.get("/list", listThreadsHandler);
 
 // Ask AI routes (must be before threadId routes)
 router.get("/ask", askAI);
@@ -33,12 +33,13 @@ router.post("/:threadId/runs", postRun);
 router.get("/:threadId/runs/:runId", pollRunThread);
 
 router.post("/:threadId/messages", addMessage);
+
 router.get("/:threadId/messages/:messageId", getMessage);
 router.post("/:threadId/messages/:messageId", modifyMessage);
 router.delete("/:threadId", deleteThreadApi);
 router.post("/:threadId/run", runThread);
 router.post("/:threadId/run/sync", runThreadSync);
-router.post("/run", createThreadAndRun);
+// router.post("/run", createThreadAndRun);
 router.get("/:threadId/runs", listRuns);
 
 // Error handling middleware

@@ -65,16 +65,17 @@ exports.createThread = async (assistantId) => {
   return data;
 };
 
-exports.createRunWithThread = async (thread_id) => {
+exports.createRunWithThread = async (thread_id, assistant_id) => {
+  console.log("ghere", thread_id, assistant_id)
   const { data } = await openaiClient.post(
-   `/threads/${thread_id}/runs`
+    `/threads/${thread_id}/runs`, { assistant_id }
   );
   return data;
 };
 
-exports.pollRunWithThreadId = async (thread_id, run_id)  => {
-  const { data } = await openaiClient.post(
-   `/threads/${thread_id}/runs/${run_id}`
+exports.pollRunWithThreadId = async (thread_id, run_id) => {
+  const { data } = await openaiClient.get(
+    `/threads/${thread_id}/runs/${run_id}`
   );
   return data;
 };
@@ -87,33 +88,32 @@ exports.listThreads = async () => {
 
 exports.deleteThread = async (thread_id) => {
   const { data } = await openaiClient.get(
-     `/threads/${thread_id}`
+    `/threads/${thread_id}`
   );
   return data;
 };
 
 // Message operations
-exports.addMessage = async (assistantId, threadId, role, content, fileIds = []) => {
+exports.addMessage = async (threadId, role, content) => {
   const { data } = await openaiClient.post(
-    `/v1/threads/${threadId}/messages`,
-    { 
-      role, 
-      content,
-      file_ids: fileIds
+    `/threads/${threadId}/messages`,
+    {
+      role,
+      content
     }
   );
   return data;
 };
 
 exports.listMessages = async (assistantId, threadId, options = {}) => {
-  const params =     { 
-      params: {
-        limit: options.limit || 100,
-        order: options.order || 'desc',
-        after: options.after,
-        before: options.before
-      }
+  const params = {
+    params: {
+      limit: options.limit || 100,
+      order: options.order || 'desc',
+      after: options.after,
+      before: options.before
     }
+  }
   const { data } = await openaiClient.get(
     `/threads/${threadId}/messages`
   );
@@ -184,22 +184,22 @@ exports.deleteFile = async (fileId) => {
 // Run operations
 exports.listRuns = async (assistantId, threadId) => {
   const { data } = await openaiClient.get(
-    `/v1/threads/${threadId}/runs`
+    `/threads/${threadId}/runs`
   );
   return data;
 };
 
 exports.cancelRun = async (assistantId, threadId, runId) => {
   const { data } = await openaiClient.post(
-    `/v1/threads/${threadId}/runs/${runId}/cancel`
+    `/threads/${threadId}/runs/${runId}/cancel`
   );
   return data;
 };
 
 exports.createRun = async (assistantId, threadId, options = {}) => {
   const { data } = await openaiClient.post(
-    `/v1/threads/${threadId}/runs`,
-    { 
+    `/threads/${threadId}/runs`,
+    {
       assistant_id: assistantId,
       ...options
     }
@@ -209,7 +209,7 @@ exports.createRun = async (assistantId, threadId, options = {}) => {
 
 exports.getRun = async (assistantId, threadId, runId) => {
   const { data } = await openaiClient.get(
-    `/v1/threads/${threadId}/runs/${runId}`
+    `/threads/${threadId}/runs/${runId}`
   );
   return data;
 };
@@ -253,11 +253,11 @@ exports.createThreadAndRun = async (assistantId, options = {}) => {
 exports.createStreamingRun = async (assistantId, threadId) => {
   const response = await openaiClient.post(
     `/threads/${threadId}/runs`,
-    { 
+    {
       assistant_id: assistantId,
-      stream: true 
+      stream: true
     },
-    { 
+    {
       responseType: "stream",
       headers: {
         "Accept": "text/event-stream",
