@@ -14,9 +14,12 @@ const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, folderPath);
   },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname)); // Add a unique suffix to avoid filename collisions
+filename: function (req, file, cb) {
+    // Sanitize filename: remove path, replace spaces with underscores
+    const baseName = path.basename(file.originalname, path.extname(file.originalname));
+    const sanitizedBaseName = baseName.replace(/\s+/g, '_');
+    const ext = path.extname(file.originalname);
+    cb(null, sanitizedBaseName + ext);
   }
 });
 

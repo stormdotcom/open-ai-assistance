@@ -65,15 +65,18 @@ async function getVectorStore(req, res) {
 /** GET /assistants/:assistantId/files (legacy + vector-store) */
 async function listFiles(req, res) {
   try {
-    const { assistantId } = req.params;
-    const assistant = await openai.beta.assistants.retrieve(assistantId);
+    const assistantId = "asst_i2nycTxlAkllt03MSVhAts35";  // Assistant ID, could be dynamic if passed in the request
+    const assistantResponse = await openaiClient.get(`assistants/${assistantId}`);
+
+    const assistant = assistantResponse.data;
 
     // legacy file_ids
     const legacyIds = assistant.file_ids || [];
-    const legacy = await Promise.all(
+    const legacyFiles = await Promise.all(
       legacyIds.map(async (id) => {
         try {
-          return await openai.files.retrieve(id);
+          const fileResponse = await openaiClient.get(`/files/${id}`);
+          return fileResponse.data;
         } catch {
           return { id, error: "unreachable" };
         }
@@ -83,18 +86,24 @@ async function listFiles(req, res) {
     // vector-store files
     const vsIds = assistant.tool_resources?.file_search?.vector_store_ids || [];
     const vsFiles = [];
-    for (const vsId of vsIds) vsFiles.push(...await listVectorStoreFiles(vsId));
+    for (const vsId of vsIds) {
+      const files = await listVectorStoreFiles(vsId);
+      vsFiles.push(...files);
+    }
 
     res.json({
       assistant_id: assistantId,
       vector_store_ids: vsIds,
-      files: [...legacy, ...vsFiles],
+      files: [...legacyFiles, ...vsFiles],
     });
   } catch (err) {
-    handleError(res, err);
+    console.error('Error retrieving files:', err);
+    res.status(500).json({
+      error: 'Failed to retrieve files',
+      details: err.message,
+    });
   }
 }
-
 /** GET /assistants/:assistantId/files/all (account-wide view) */
 async function listAllFiles(req, res) {
   try {
