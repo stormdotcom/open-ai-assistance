@@ -98,8 +98,8 @@ async function listFiles(req, res) {
 /** GET /assistants/:assistantId/files/all (account-wide view) */
 async function listAllFiles(req, res) {
   try {
-    const { assistantId } = req.params;
-    const assistant = await openai.beta.assistants.retrieve(assistantId);
+    const assistant_id = 'asst_i2nycTxlAkllt03MSVhAts35'
+    const assistant = await openai.beta.assistants.retrieve(assistant_id);
     const attachedIds = new Set(assistant.file_ids || []);
 
     const files = await openai.listFiles();
