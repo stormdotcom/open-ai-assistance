@@ -1,5 +1,6 @@
 const axios = require("axios");
 const { OpenAI } = require("openai");
+const fs = require("fs");
 
 // Export OpenAI SDK client for use in controllers
 const openai = new OpenAI({
@@ -66,7 +67,6 @@ exports.createThread = async (assistantId) => {
 };
 
 exports.createRunWithThread = async (thread_id, assistant_id) => {
-  console.log("ghere", thread_id, assistant_id)
   const { data } = await openaiClient.post(
     `/threads/${thread_id}/runs`, { assistant_id }
   );
@@ -171,6 +171,62 @@ exports.listFiles = async (purpose = 'assistants') => {
   return data;
 };
 
+exports.generateEmbedding = async (text) => {
+  try {
+    const response = await openaiClient.post('/embeddings',{
+      model: 'text-embedding-ada-002',  // The embedding model
+      input: text  // Input text from PDF
+    });
+    return response.data[0].embedding;  // Return the embedding vector
+  } catch (error) {
+    console.error('Error generating embedding:', error);
+  }
+};
+
+exports.uploadFilesToVectorStore = async (vectorStoreId, filePaths) => {
+  try {
+    const fileIds = [];
+
+    // Upload each file one by one using OpenAI SDK
+    for (const filePath of filePaths) {
+      const file = fs.createReadStream(filePath);
+      console.log(`Uploading file from path: ${filePath}`);
+
+      const uploadedFile = await openai.files.create({
+        file,
+        purpose: 'assistants',  // Adjust the purpose if necessary
+      });
+
+      // Collect the file ID
+      fileIds.push(uploadedFile.id);
+      console.log(`File uploaded with ID: ${uploadedFile.id}`);
+    }
+
+    // Now that the files are uploaded, associate them with the vector store
+    console.log("Ingesting files into the vector store...");
+    const response = await openai.vectorStores.fileBatches.createAndPoll(vectorStoreId, {
+      file_ids: fileIds,  // List of file IDs to ingest
+    });
+    console.log("File ingestion completed.");
+    return response.data;
+  } catch (error) {
+    console.error('Error uploading files:', error);
+    throw error; // Re-throw error to handle in calling function
+  }
+};
+exports.processImage = async (imagePath) => {
+  const form = new FormData();
+  form.append('file', fs.createReadStream(imagePath));  
+  form.append('model', 'gpt-4'); 
+
+  try {
+    const response = await openaiClient.post('/images/generations',form);
+    return response.data[0].embedding;  // Return the embedding vector
+  } catch (error) {
+    console.error('Error generating embedding:', error);
+  }
+};
+
 exports.getFile = async (fileId) => {
   const { data } = await openaiClient.get(`/files/${fileId}`);
   return data;
@@ -250,23 +306,7 @@ exports.createThreadAndRun = async (assistantId, options = {}) => {
 };
 
 // Streaming run
-exports.createStreamingRun = async (assistantId, threadId) => {
-  const response = await openaiClient.post(
-    `/threads/${threadId}/runs`,
-    {
-      assistant_id: assistantId,
-      stream: true
-    },
-    {
-      responseType: "stream",
-      headers: {
-        "Accept": "text/event-stream",
-        "Content-Type": "application/json"
-      }
-    }
-  );
-  return response.data;
-};
+
 
 // Ask AI
 exports.askAI = async (assistantId, query) => {
